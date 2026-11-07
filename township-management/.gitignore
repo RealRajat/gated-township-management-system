@@ -1,0 +1,51 @@
+# ==============================================================================
+# Monorepo .gitignore — Township Management System
+# ==============================================================================
+
+# Node / Frontend
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/.vite/
+frontend/dist/
+
+# Java / Maven / Backend
+**/target/
+**/*.class
+**/*.jar
+**/*.war
+**/*.ear
+**/*.original
+backend/target/
+
+# Uploads & Runtime Media
+**/uploads/
+backend/uploads/
+
+# Logs
+*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/pnpm-debug.log*
+
+# Environment & Secret files
+**/.env
+**/.env.local
+**/.env.*.local
+!**/.env.example
+
+# IDE & Editors
+.idea/
+*.iml
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# OS metadata
+Thumbs.db
+Desktop.ini
+.DS_Store

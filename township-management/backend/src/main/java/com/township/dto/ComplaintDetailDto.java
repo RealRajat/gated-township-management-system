@@ -1,0 +1,53 @@
+package com.township.dto;
+
+import com.township.entity.ComplaintCategory;
+import com.township.entity.ComplaintPriority;
+import com.township.entity.ComplaintStatus;
+import java.time.LocalDateTime;
+import java.util.List;
+
+public record ComplaintDetailDto(
+    Long id,
+    String complaintNumber,
+    Long flatId,
+    String towerId,
+    String towerName,
+    String flatNumber,
+    String residentName,
+    String residentEmail,
+    String residentPhone,
+    String title,
+    String description,
+    ComplaintCategory category,
+    ComplaintPriority priority,
+    ComplaintStatus status,
+    boolean isCriticalSafetyEscalation,
+    String safetyTriggerKeyword,
+    String aiSuggestedCategory,
+    String aiSuggestedPriority,
+    Integer aiConfidenceScore,
+    String assignedTeam,
+    Long assignedStaffId,
+    String assignedStaffName,
+    boolean hasPhoto,
+    String photoOriginalFilename,
+    Long photoSizeBytes,
+    String photoUrl,
+    LocalDateTime createdAt,
+    LocalDateTime responseDeadline,
+    LocalDateTime resolutionDeadline,
+    boolean isOverdue,
+    LocalDateTime acknowledgedAt,
+    LocalDateTime resolvedAt,
+    LocalDateTime closedAt,
+    String resolutionNotes,
+    Integer residentRating,
+    String residentFeedback,
+    LocalDateTime ratedAt,
+    Long parentDuplicateOfId,
+    String parentDuplicateComplaintNumber,
+    List<ComplaintActivityDto> activities,
+    List<ComplaintSummaryDto> linkedDuplicates,
+    List<ComplaintSummaryDto> potentialDuplicates
+) {}
+

@@ -1,0 +1,40 @@
+{
+  "towers": [
+    { "id": "T01", "name": "Tower A (Orchid)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T02", "name": "Tower B (Marigold)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T03", "name": "Tower C (Hibiscus)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T04", "name": "Tower D (Jasmine)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T05", "name": "Tower E (Lotus)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T06", "name": "Tower F (Tulip)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T07", "name": "Tower G (Iris)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T08", "name": "Tower H (Aster)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T09", "name": "Tower I (Lavender)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T10", "name": "Tower J (Dahlia)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T11", "name": "Tower K (Carnation)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T12", "name": "Tower L (Magnolia)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T13", "name": "Tower M (Gardenia)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T14", "name": "Tower N (Begonia)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T15", "name": "Tower O (Camellia)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T16", "name": "Tower P (Primrose)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T17", "name": "Tower Q (Bluebell)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T18", "name": "Tower R (Snapdragon)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T19", "name": "Tower S (Zinnia)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T20", "name": "Tower T (Petunia)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T21", "name": "Tower U (Foxglove)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T22", "name": "Tower V (Freesia)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T23", "name": "Tower W (Anemone)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T24", "name": "Tower X (Violet)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T25", "name": "Tower Y (Pansy)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T26", "name": "Tower Z (Lupin)", "floors": 15, "units": 86, "type": "Residential" },
+    { "id": "T27", "name": "Tower AA (Daffodil)", "floors": 15, "units": 82, "type": "Residential" },
+    { "id": "T28", "name": "Tower AB (Sunflower)", "floors": 15, "units": 82, "type": "Residential" }
+  ],
+  "unitTypes": [
+    { "code": "2BHK_STD", "label": "2 BHK Standard", "carpetSqFt": 850, "superBuiltUpSqFt": 1150 },
+    { "code": "2BHK_LUX", "label": "2 BHK Luxury", "carpetSqFt": 980, "superBuiltUpSqFt": 1320 },
+    { "code": "3BHK_STD", "label": "3 BHK Standard", "carpetSqFt": 1250, "superBuiltUpSqFt": 1690 },
+    { "code": "3BHK_LUX", "label": "3 BHK Luxury", "carpetSqFt": 1450, "superBuiltUpSqFt": 1960 },
+    { "code": "4BHK_PRE", "label": "4 BHK Premium Penthouse", "carpetSqFt": 2200, "superBuiltUpSqFt": 2970 }
+  ]
+}
+

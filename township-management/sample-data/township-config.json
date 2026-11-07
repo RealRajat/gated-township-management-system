@@ -1,0 +1,35 @@
+{
+  "township": {
+    "name": "Pune Grand Vista Gated Community",
+    "location": {
+      "address": "Survey No. 48/2, Baner - Balewadi High Street Link Road",
+      "city": "Pune",
+      "district": "Pune",
+      "state": "Maharashtra",
+      "postalCode": "411045",
+      "country": "India"
+    },
+    "metrics": {
+      "totalTowers": 28,
+      "totalUnits": 2400,
+      "occupancyRateEstimate": 0.88,
+      "totalFloorsPerTower": 15,
+      "unitsPerFloorAverage": 6
+    },
+    "facilityManagement": {
+      "company": "Apex Facility Management Services Pune Pvt. Ltd.",
+      "helpDeskEmail": "helpdesk@grandvistapune.in",
+      "emergencyHelpline": "+91 20 6789 0100",
+      "operationalHours": "24x7 Control Room"
+    },
+    "billingDefaults": {
+      "currency": "INR",
+      "billingCycle": "QUARTERLY",
+      "sqFtRateINR": 3.75,
+      "sinkingFundMonthlyINR": 500,
+      "gstRatePercent": 18.0,
+      "gstExemptionThresholdMonthlyINR": 7500
+    }
+  }
+}
+
