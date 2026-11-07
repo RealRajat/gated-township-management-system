@@ -218,3 +218,4 @@ Expected JSON response:
 
 5. **`Offline Gate Sync Queue`**:
    - If a gate tablet lost network connectivity during visitor check-ins, the actions are queued in browser `localStorage`. When the connection is restored, navigate to the Guard Portal and click **Sync Offline Actions** to flush the queue into the PostgreSQL ledger idempotently.
+

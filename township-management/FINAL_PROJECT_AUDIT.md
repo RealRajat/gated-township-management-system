@@ -123,3 +123,4 @@ All 8 migration stages (`V1` through `V8`) have been executed and verified in Po
    Generate production passwords for `POSTGRES_PASSWORD` and `JWT_SECRET` in `.env` before public exposure.
 3. **Domain & SSL Setup**:
    Map DNS domain to host VM and configure Let's Encrypt / Certbot SSL certificates on reverse proxy.
+

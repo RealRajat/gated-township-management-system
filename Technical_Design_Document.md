@@ -1,7 +1,7 @@
 # Technical Design Document: Gated Township Resident Management System
 
-**Repository Status**: Local Git Repository Initialized (`branch: main`, verified commit `6c241318c093a20dfc60464289e9dd3114b1092a`)  
-**GitHub URL**: Pending remote publication (commands provided below)  
+**GitHub Repository**: https://github.com/RealRajat/gated-township-management-system  
+**Git Clone URL**: https://github.com/RealRajat/gated-township-management-system.git  
 **Live Application Status**: Local & Docker deployment ready (`http://localhost:8080` & `http://localhost:5173`)  
 **Target Township**: Pune Grand Vista, Baner-Balewadi, Pune, Maharashtra (28 Towers • 2,400 Apartments)  
 **Author**: Engineering Architecture Team  
@@ -242,3 +242,4 @@ To ensure architectural focus, system stability, and timely delivery of core tow
 | **Single-Node In-Memory Scheduler** | Timed jobs run inside the Spring Boot container. | Introduce Quartz or ShedLock backed by PostgreSQL for multi-node clustering. |
 | **Email Delivery** | Circulars and notices are tracked in-app. | Integrate SendGrid or AWS SES for automated email digest broadcasts. |
 | **Automated Meter Reading (AMR)** | Water tanker supplementary calculations are manual. | Integrate IoT water meters via LoRaWAN / MQTT telemetry into billing. |
+
