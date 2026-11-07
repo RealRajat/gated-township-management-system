@@ -35,6 +35,10 @@ backend/uploads/
 **/.env.*.local
 !**/.env.example
 
+# Submission Archives & Temp Build Files
+*.zip
+Technical_Design_Document.html
+
 # IDE & Editors
 .idea/
 *.iml
