@@ -1,5 +1,6 @@
 import os
 import subprocess
+import re
 from markdown_it import MarkdownIt
 
 def build_pdf():
@@ -13,6 +14,23 @@ def build_pdf():
 
     md = MarkdownIt("commonmark").enable("table")
     rendered_body = md.render(md_content)
+
+    # Enhance blockquotes for GitHub alerts
+    rendered_body = re.sub(
+        r'<blockquote>\s*<p>\[!NOTE\]<br\s*/?>',
+        '<blockquote class="alert-note"><p><span class="badge badge-note">NOTE</span><br />',
+        rendered_body
+    )
+    rendered_body = re.sub(
+        r'<blockquote>\s*<p>\[!WARNING\]<br\s*/?>',
+        '<blockquote class="alert-warning"><p><span class="badge badge-warning">WARNING</span><br />',
+        rendered_body
+    )
+    rendered_body = re.sub(
+        r'<blockquote>\s*<p>\[!IMPORTANT\]<br\s*/?>',
+        '<blockquote class="alert-important"><p><span class="badge badge-important">IMPORTANT</span><br />',
+        rendered_body
+    )
 
     html_template = f"""<!DOCTYPE html>
 <html lang="en">
@@ -49,7 +67,7 @@ def build_pdf():
   }}
 
   h2 {{
-    font-size: 14pt;
+    font-size: 13.5pt;
     font-weight: 700;
     color: #0f172a;
     border-bottom: 1px solid #cbd5e1;
@@ -60,7 +78,7 @@ def build_pdf():
   }}
 
   h3 {{
-    font-size: 11.5pt;
+    font-size: 11pt;
     font-weight: 600;
     color: #0d9488;
     margin-top: 14pt;
@@ -80,7 +98,7 @@ def build_pdf():
   table {{
     width: 100%;
     border-collapse: collapse;
-    margin: 10pt 0;
+    margin: 12pt 0;
     font-size: 9pt;
     page-break-inside: avoid;
   }}
@@ -104,13 +122,15 @@ def build_pdf():
   pre {{
     background-color: #0f172a;
     color: #f8fafc;
-    padding: 10pt;
+    padding: 10pt 12pt;
     border-radius: 6px;
     font-family: Consolas, "Courier New", monospace;
     font-size: 8.5pt;
+    line-height: 1.45;
     overflow-x: auto;
     margin: 10pt 0;
     page-break-inside: avoid;
+    border: 1px solid #1e293b;
   }}
 
   code {{
@@ -118,7 +138,7 @@ def build_pdf():
     font-size: 9pt;
     background-color: #f1f5f9;
     color: #0d9488;
-    padding: 1pt 3pt;
+    padding: 1.5pt 3.5pt;
     border-radius: 4px;
   }}
 
@@ -136,6 +156,50 @@ def build_pdf():
     padding: 8pt 12pt;
     font-size: 9.5pt;
     border-radius: 0 6px 6px 0;
+    page-break-inside: avoid;
+  }}
+
+  blockquote.alert-note {{
+    border-left: 4px solid #0d9488;
+    background-color: #f0fdfa;
+    color: #134e4a;
+  }}
+
+  blockquote.alert-warning {{
+    border-left: 4px solid #f59e0b;
+    background-color: #fffbeb;
+    color: #78350f;
+  }}
+
+  blockquote.alert-important {{
+    border-left: 4px solid #6366f1;
+    background-color: #eef2ff;
+    color: #312e81;
+  }}
+
+  .badge {{
+    display: inline-block;
+    padding: 1.5pt 5pt;
+    font-size: 7.5pt;
+    font-weight: 700;
+    border-radius: 3px;
+    letter-spacing: 0.5px;
+    margin-bottom: 3pt;
+  }}
+
+  .badge-note {{
+    background-color: #0d9488;
+    color: #ffffff;
+  }}
+
+  .badge-warning {{
+    background-color: #d97706;
+    color: #ffffff;
+  }}
+
+  .badge-important {{
+    background-color: #4f46e5;
+    color: #ffffff;
   }}
 
   hr {{

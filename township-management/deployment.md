@@ -4,6 +4,9 @@
 
 This guide provides step-by-step instructions for installing, configuring, running, and deploying the Gated Township Resident Management System across local development, on-premise servers, and containerized cloud environments.
 
+> [!NOTE]
+> **Live Deployment Status**: No public cloud live deployment URL exists yet. The application has been fully validated in local environments and containerized multi-container setups via Docker Compose (Backend: `http://localhost:8080`, Frontend: `http://localhost:5173`).
+
 ---
 
 ## 1. System Prerequisites
@@ -12,10 +15,11 @@ This guide provides step-by-step instructions for installing, configuring, runni
 | :--- | :--- | :--- | :--- |
 | **Operating System** | Windows 10/11, Ubuntu 22.04 LTS, or macOS 13+ | Linux x86_64 | Host environment |
 | **Java Runtime** | Java 17 LTS (Eclipse Temurin / OpenJDK) | Java 17.0.16+ | Spring Boot backend execution |
-| **Node.js** | Node.js 18.x LTS | Node.js 20.x LTS | React / Vite build & dependencies |
+| **Backend Framework** | Spring Boot 4.1.2 (Java 17 LTS) | Spring Boot 4.1.2 | Enterprise application backend & REST APIs |
+| **Node.js** | Node.js 18.x LTS | Node.js 20.x LTS | React 19 / Vite 8 build & dependencies |
 | **Package Manager** | npm 9.x | npm 10.x | Frontend package management |
-| **Database** | PostgreSQL 15 | PostgreSQL 16 LTS | Relational storage & ACID ledger |
-| **Containerization** | Docker Engine 24+ & Docker Compose 2.20+ | Latest stable | Container deployment |
+| **Database** | PostgreSQL 15 | PostgreSQL 16 LTS | Relational storage & ACID double-entry ledger |
+| **Containerization** | Docker Engine 24+ & Docker Compose 2.20+ | Latest stable | Multi-container deployment |
 
 ---
 
@@ -31,7 +35,7 @@ This guide provides step-by-step instructions for installing, configuring, runni
 - `DB_USER`: Database role/username with schema creation and DDL/DML permissions.
 - `DB_PASSWORD`: Password for the designated database role.
 - `PORT`: HTTP server listen port for the Spring Boot backend (default: `8080`).
-- `JWT_SECRET`: Cryptographically secure HMAC-SHA512 key encoded in Base64 (minimum 512 bits / 64 bytes).
+- `JWT_SECRET`: Cryptographically secure HMAC-SHA512 key encoded in Base64 (minimum 512 bits / 64 bytes). JJWT signs with HS512 for keys >= 64 bytes and HS256 for 32-byte keys.
 - `JWT_EXPIRATION_MS`: Access token time-to-live in milliseconds (e.g. `86400000` for 24 hours).
 - `CORS_ALLOWED_ORIGINS`: Comma-separated list of permitted origin URLs (e.g. `http://localhost:5173,https://township.yourdomain.com`).
 - `GEMINI_API_KEY`: *(Optional)* Google Gemini API key for semantic complaint classification. When omitted, the certified semantic rule engine runs automatically as an autonomous zero-dependency fallback.
@@ -162,17 +166,26 @@ Once the database healthcheck passes, Spring Boot starts and binds to port 8080.
 
 The database seeder automatically provisions test accounts for role validation.
 
-> [!NOTE]
-> These credentials are strictly development seeds for demonstration and evaluation purposes. In production deployments, change these passwords immediately or provision dedicated user records.
+> [!WARNING]
+> **PRODUCTION SECURITY WARNING — DEVELOPMENT-ONLY SEED CREDENTIALS**:
+> All demo accounts, emails, and default passwords listed below are strictly development seeds intended for local testing, evaluation, and role verification. They must **NEVER** be exposed or used in any staging, production, or publicly accessible deployment.
+> 
+> Before deploying to production or exposing the system to external network traffic:
+> 1. Disable the database seeder (`app.seeder.enabled=false` or remove development seed profiles).
+> 2. Change all administrative and staff passwords to strong, cryptographically generated random strings.
+> 3. Deactivate or delete development test accounts from PostgreSQL (`DELETE FROM users WHERE email LIKE '%@grandvistapune.in';`).
 
-| Persona / Role | Full Name | Email Address | Phone Number | Unit / Flat | Default Password |
+| Persona / Role | Full Name | Login Identifier / Email | Assigned Unit / Location | Default Password | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Resident (1)** | Neeraj Kulkarni | `neeraj.kulkarni@grandvistapune.in` | `+919822012031` | T07-1203 (1,150 sq ft) | `Resident@123` |
-| **Resident (2)** | Swati Joshi | `swati.joshi@grandvistapune.in` | `+919822004082` | T12-0408 (980 sq ft) | `Resident@123` |
-| **Resident (3)** | Aamir Shaikh | `aamir.shaikh@grandvistapune.in` | `+919822016013` | T21-1601 (1,640 sq ft) | `Resident@123` |
-| **Help Desk** | Col. Rajiv Sharma (Retd.) | `helpdesk@grandvistapune.in` | `+919822000100` | Facility HQ Office | `HelpDesk@123` |
-| **Gate Guard** | Santosh Shinde | `guard@grandvistapune.in` | `+919822000200` | Gate 1 Main Cabin | `Guard@123` |
-| **Committee** | Dr. Vikram Sethi | `committee@grandvistapune.in` | `+919822000300` | MC Boardroom | `Committee@123` |
+| **Resident (1)** | Neeraj Kulkarni | `neeraj.kulkarni@grandvistapune.in` | Unit T07-1203 (1,150 sq ft) | `Resident@123` | Primary owner in Tower T07 |
+| **Resident (2)** | Swati Joshi | `swati.joshi@grandvistapune.in` | Unit T12-0408 (980 sq ft) | `Resident@123` | Primary owner in Tower T12 |
+| **Resident (3)** | Aamir Shaikh | `aamir.shaikh@grandvistapune.in` | Unit T21-1601 (1,640 sq ft) | `Resident@123` | Primary owner in Tower T21 |
+| **Help Desk** | Col. Rajiv Sharma (Retd.) | `helpdesk@grandvistapune.in` | Facility HQ Office | `HelpDesk@123` | Operations & maintenance staff |
+| **Gate Guard** | Santosh Shinde | `guard@grandvistapune.in` | Gate 1 Main Cabin | `Guard@123` | Gate security terminal account |
+| **Committee** | Dr. Vikram Sethi | `committee@grandvistapune.in` | MC Boardroom | `Committee@123` | Managing Committee analytics account |
+
+> [!NOTE]
+> Residents authenticate using their login email and password. Resident phone numbers have been omitted from all documentation to protect personal privacy and uphold society data governance rules.
 
 ---
 
@@ -218,4 +231,3 @@ Expected JSON response:
 
 5. **`Offline Gate Sync Queue`**:
    - If a gate tablet lost network connectivity during visitor check-ins, the actions are queued in browser `localStorage`. When the connection is restored, navigate to the Guard Portal and click **Sync Offline Actions** to flush the queue into the PostgreSQL ledger idempotently.
-

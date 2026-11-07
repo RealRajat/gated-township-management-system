@@ -2,11 +2,11 @@
 
 **GitHub Repository**: https://github.com/RealRajat/gated-township-management-system  
 **Git Clone URL**: https://github.com/RealRajat/gated-township-management-system.git  
-**Live Application Status**: Local & Docker deployment ready (`http://localhost:8080` & `http://localhost:5173`)  
+**Live Application Status**: No public live deployment URL exists yet. The application is verified locally and container-ready via Docker Compose (Backend: `http://localhost:8080`, Frontend: `http://localhost:5173`).  
 **Target Township**: Pune Grand Vista, Baner-Balewadi, Pune, Maharashtra (28 Towers • 2,400 Apartments)  
 **Author**: Engineering Architecture Team  
 **Date**: November 8, 2026  
-**Document Version**: 1.0.0 (Phase 12 Final Release)
+**Document Version**: 1.0.0 (Phase 12 Final Release)  
 
 ---
 
@@ -22,6 +22,9 @@ Large residential gated townships in India (such as Pune Grand Vista, comprising
 6. **Executive RWA Governance Gaps**: Managing Committees require real-time visibility into collection rates, dues ageing buckets, and SLA compliance without exposing sensitive resident contact credentials.
 
 The **Gated Township Resident Management System** resolves these challenges through a unified, secure, multi-persona web application and REST API.
+
+> [!NOTE]
+> **Live Deployment Note**: No public cloud live deployment URL has been provisioned yet for this evaluation. The application is running in local development and containerized multi-container environments via Docker Compose (`http://localhost:8080` backend, `http://localhost:5173` frontend).
 
 ---
 
@@ -41,7 +44,7 @@ graph TB
         RBAC["Method Security (@PreAuthorize)"]
     end
 
-    subgraph BackendLayer["Spring Boot 4 Application Layer"]
+    subgraph BackendLayer["Spring Boot 4.1.2 Application Layer"]
         AuthSvc["Auth & User Service"]
         BillSvc["Maintenance Billing & Ledger Engine"]
         PaySvc["Payment & Reconciliation Engine"]
@@ -67,10 +70,10 @@ graph TB
 ```
 
 ### Technology Decision Rationale
-- **Java 17 LTS & Spring Boot**: Chosen for enterprise-grade transactional boundaries (`@Transactional`), mature ORM with Spring Data JPA/Hibernate, robust security filtering, and non-blocking background concurrency.
+- **Java 17 LTS & Spring Boot 4.1.2**: Chosen for enterprise-grade transactional boundaries (`@Transactional`), mature ORM with Spring Data JPA/Hibernate, robust security filtering, and non-blocking background concurrency.
 - **PostgreSQL 16**: Selected for ACID transaction isolation, relational foreign keys, unique constraint guarantees across towers/flats/users, and high-performance financial aggregation queries.
 - **React 19 & Vite 8**: Ensures sub-second local build times, tree-shaking, and high-performance client rendering with responsive Tailwind CSS.
-- **Stateless JWT (HMAC-SHA512)**: Enables horizontally scalable REST authentication without server-side session state, with user claims and roles signed cryptographically.
+- **Stateless JWT (HMAC-SHA512 / HS512)**: Enables horizontally scalable REST authentication without server-side session state. Cryptographic signature is generated via JJWT `Keys.hmacShaKeyFor()` using a 576-bit secret (HS512), with built-in fallback to HS256 for 256-bit keys. User claims, assigned flat associations, and RBAC roles are encapsulated securely within the token.
 - **Zero Floating-Point Financials**: `java.math.BigDecimal` with `RoundingMode.HALF_UP` is enforced across all currency fields to eliminate IEEE 754 precision drift.
 
 ---
@@ -197,6 +200,7 @@ flowchart TD
    - Offline actions are persisted in browser `localStorage`. When the guard tablet recovers connectivity, an **Offline Sync** badge alerts the guard to flush the queue into PostgreSQL with zero data loss.
 4. **Role-Aware Contextual Header**:
    - Dynamically highlights active persona (*Resident*, *Help Desk*, *Security Gate*, *Managing Committee*) with one-click access to demo accounts in development environments.
+   - **Development-Only Warning**: Contextual demo switcher displays a prominent banner indicating credentials are development seeds and must be disabled before production release.
 
 ---
 
@@ -212,15 +216,21 @@ flowchart TD
    - Guards are prohibited from approving visitor passes on behalf of residents (`VisitorService.processResidentApproval` explicitly blocks `Role.GUARD`).
 5. **Bank Ambiguity Shield**:
    - Ambiguous bank statement line items are never auto-posted to ledgers. Transactions with matching amounts but ambiguous narrations are routed to `MANUAL_REVIEW` or `UNMATCHED`.
+6. **Development Credentials Isolation & Rotation Warning**:
+   - All demo seed credentials documented in operational guides are strictly restricted to local and test environments. Production deployment requires disabling the seeder profile and rotating all credentials to secure, unguessable secrets.
 
 ---
 
 ## 8. Assumptions & Design Constraints
 
-1. **Society Maintenance Tariff**: Flat monthly rate of INR 6.50 per square foot based on flat carpet area as established in the original township brief.
-2. **Payment Processing**: Mock payment gateway in test mode simulating full and partial settlements, UTR generation, and immutable ledger crediting without third-party banking fees.
-3. **Gate Security Hardware**: Camera scanning utilizes standard HTML5 video capture APIs and browser QR scanners; automated boom barrier hardware integration requires an MQTT/GPIO relay controller.
-4. **Township Size**: Initialized for 28 residential towers (T01 through T28) and 2,400 apartments in Pune, Maharashtra.
+- **Assumption 1 (Maintenance Tariff)**: Flat monthly rate of INR 6.50 per square foot based on flat carpet area as established in the original township brief and society bye-laws.
+- **Assumption 2 (Test Mode Payment Processing)**: Mock payment gateway operating strictly in test mode simulating full and partial settlements, UTR generation, and immutable ledger crediting without real money or external payment gateway integrations.
+- **Assumption 3 (Gate Security & Scanner Hardware)**: Gate camera scanning utilizes standard HTML5 video capture APIs and browser QR scanners; automated physical boom barrier hardware integration requires a separate MQTT/GPIO relay controller.
+- **Assumption 4 (Township Scale & Hierarchy)**: Target deployment calibrated for Pune Grand Vista consisting of 28 residential towers (T01 through T28) and 2,400 apartments in Pune, Maharashtra.
+- **Assumption 5 (AI Fallback & Zero-Dependency Operation)**: When an external Google Gemini API key is not configured or network connectivity is unavailable, the local semantic rule engine autonomously classifies complaints with 100% availability.
+- **Assumption 6 (Single-Township Scope)**: The current database schema is optimized for a single gated community / township with 28 towers rather than multi-tenant multi-society SaaS.
+- **Assumption 7 (Strict Resident Unit Isolation)**: Residents have access exclusively to data (bills, ledgers, visitor passes, notices) linked to the flats where they hold primary ownership, tenancy, or family membership.
+- **Assumption 8 (Live Deployment Staging)**: No public cloud live deployment URL exists yet. The application is configured and verified for local execution and on-premise / containerized deployment via Docker Compose.
 
 ---
 
@@ -242,4 +252,3 @@ To ensure architectural focus, system stability, and timely delivery of core tow
 | **Single-Node In-Memory Scheduler** | Timed jobs run inside the Spring Boot container. | Introduce Quartz or ShedLock backed by PostgreSQL for multi-node clustering. |
 | **Email Delivery** | Circulars and notices are tracked in-app. | Integrate SendGrid or AWS SES for automated email digest broadcasts. |
 | **Automated Meter Reading (AMR)** | Water tanker supplementary calculations are manual. | Integrate IoT water meters via LoRaWAN / MQTT telemetry into billing. |
-
