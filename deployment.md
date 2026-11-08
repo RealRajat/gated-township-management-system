@@ -5,7 +5,11 @@
 This guide provides step-by-step instructions for installing, configuring, running, and deploying the Gated Township Resident Management System across local development, on-premise servers, and containerized cloud environments.
 
 > [!NOTE]
-> **Live Deployment Status**: No public cloud live deployment URL exists yet. The application has been fully validated in local environments and containerized multi-container setups via Docker Compose (Backend: `http://localhost:8080`, Frontend: `http://localhost:5173`).
+> **Live Evaluation Deployment**: Frontend: https://gated-township-management.vercel.app  
+> Backend API: https://gated-township-api.onrender.com  
+> Health endpoint: https://gated-township-api.onrender.com/api/health  
+> Database: Neon PostgreSQL 16 (Singapore).  
+> The hosted environment uses free-tier services and synthetic demo records. It is an evaluation/demo deployment only: do not enter real resident, banking, visitor, or security data. Render free resources may cold-start, and uploaded complaint/visitor photos are stored on the container filesystem without persistent disk, so those uploads can be lost on restart or redeploy. Payments are test/mock only; OTP delivery and physical gate/CCTV integrations are not enabled.
 
 ---
 
