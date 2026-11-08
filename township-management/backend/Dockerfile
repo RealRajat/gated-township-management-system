@@ -31,12 +31,12 @@ COPY --from=builder --chown=township:township /workspace/app/target/township-bac
 
 USER township
 
-# Expose default HTTP server port
-EXPOSE 8080
+# Render uses PORT=10000; local runs default to Spring Boot's 8080.
+EXPOSE 8080 10000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1
+# Health check follows the same PORT used by Spring Boot.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider "http://127.0.0.1:${PORT:-8080}/api/health" || exit 1
 
 # Launch JVM with container-aware memory allocation
 ENTRYPOINT ["java", \
@@ -44,4 +44,3 @@ ENTRYPOINT ["java", \
   "-XX:MaxRAMPercentage=75.0", \
   "-Djava.security.egd=file:/dev/./urandom", \
   "-jar", "app.jar"]
-
