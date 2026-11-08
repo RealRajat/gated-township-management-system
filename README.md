@@ -3,7 +3,9 @@
 A full-stack resident and facility-management platform for a gated township in Pune, India. The application brings resident services, maintenance operations, gate security, shared amenities, society communications, and committee reporting into one role-based web application.
 
 **Repository:** [RealRajat/gated-township-management-system](https://github.com/RealRajat/gated-township-management-system)  
-**Live demo:** Not publicly deployed yet. The application is currently documented for local and Docker-based deployment.
+**Live demo:** https://gated-township-management.vercel.app  
+**Backend API:** https://gated-township-api.onrender.com  
+**API health:** https://gated-township-api.onrender.com/api/health
 
 > **Project context:** The reference township in the brief has 28 towers and approximately 2,400 apartments. Sample records are seeded for development and evaluation; they are not live resident data.
 
