@@ -1,237 +1,186 @@
-# Deployment and Operations Guide
+# Deployment and Reviewer Guide
 
-## Gated Township Resident Management System (Pune Grand Vista)
+## Gated Township Resident Management System
 
-This guide provides step-by-step instructions for installing, configuring, running, and deploying the Gated Township Resident Management System across local development, on-premise servers, and containerized cloud environments.
+### Live evaluation links
 
-> [!NOTE]
-> **Live Evaluation Deployment**: Frontend: https://gated-township-management.vercel.app  
-> Backend API: https://gated-township-api.onrender.com  
-> Health endpoint: https://gated-township-api.onrender.com/api/health  
-> Database: Neon PostgreSQL 16 (Singapore).  
-> The hosted environment uses free-tier services and synthetic demo records. It is an evaluation/demo deployment only: do not enter real resident, banking, visitor, or security data. Render free resources may cold-start, and uploaded complaint/visitor photos are stored on the container filesystem without persistent disk, so those uploads can be lost on restart or redeploy. Payments are test/mock only; OTP delivery and physical gate/CCTV integrations are not enabled.
+- **Frontend:** https://gated-township-management.vercel.app
+- **Backend API:** https://gated-township-api.onrender.com
+- **Health endpoint:** https://gated-township-api.onrender.com/api/health
+- **GitHub:** https://github.com/RealRajat/gated-township-management-system
 
----
+This is a free-tier evaluation deployment backed by Neon PostgreSQL 16. It uses synthetic demo records only. Do not enter real resident, payment, visitor identity or security data. Render may cold-start after inactivity. Complaint and visitor photos are on the container filesystem and are not durable across restarts/redeploys because no persistent disk or object storage is configured.
 
-## 1. System Prerequisites
+## 1. Local prerequisites
 
-| Component | Minimum Version | Recommended | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Operating System** | Windows 10/11, Ubuntu 22.04 LTS, or macOS 13+ | Linux x86_64 | Host environment |
-| **Java Runtime** | Java 17 LTS (Eclipse Temurin / OpenJDK) | Java 17.0.16+ | Spring Boot backend execution |
-| **Backend Framework** | Spring Boot 4.1.2 (Java 17 LTS) | Spring Boot 4.1.2 | Enterprise application backend & REST APIs |
-| **Node.js** | Node.js 18.x LTS | Node.js 20.x LTS | React 19 / Vite 8 build & dependencies |
-| **Package Manager** | npm 9.x | npm 10.x | Frontend package management |
-| **Database** | PostgreSQL 15 | PostgreSQL 16 LTS | Relational storage & ACID double-entry ledger |
-| **Containerization** | Docker Engine 24+ & Docker Compose 2.20+ | Latest stable | Multi-container deployment |
+- Git
+- Java 17
+- Node.js and npm
+- PostgreSQL 16, or Docker Engine with Docker Compose
+- Windows 10/11, Linux or macOS
 
----
+## 2. Quick start with Docker Compose
 
-## 2. Environment Variables Specification
+Run these commands from the repository root:
 
-> [!IMPORTANT]
-> **Security Notice**: Only environment variable **names** are specified here. Never commit, log, or share real credentials or production secrets. Copy `.env.example` to `.env` to configure your values.
+~~~bash
+git clone https://github.com/RealRajat/gated-township-management-system.git
+cd gated-township-management-system
+~~~
 
-### Backend Required Variables
-- `DB_HOST`: Hostname or IP address of the PostgreSQL database server (e.g. `localhost` or Docker service name `postgres`).
-- `DB_PORT`: Port number of PostgreSQL (default: `5432`).
-- `DB_NAME`: Database catalog name (e.g. `township_db`).
-- `DB_USER`: Database role/username with schema creation and DDL/DML permissions.
-- `DB_PASSWORD`: Password for the designated database role.
-- `PORT`: HTTP server listen port for the Spring Boot backend (default: `8080`).
-- `JWT_SECRET`: Cryptographically secure HMAC-SHA512 key encoded in Base64 (minimum 512 bits / 64 bytes). JJWT signs with HS512 for keys >= 64 bytes and HS256 for 32-byte keys.
-- `JWT_EXPIRATION_MS`: Access token time-to-live in milliseconds (e.g. `86400000` for 24 hours).
-- `CORS_ALLOWED_ORIGINS`: Comma-separated list of permitted origin URLs (e.g. `http://localhost:5173,https://township.yourdomain.com`).
-- `GEMINI_API_KEY`: *(Optional)* Google Gemini API key for semantic complaint classification. When omitted, the certified semantic rule engine runs automatically as an autonomous zero-dependency fallback.
+Copy the environment template:
 
-### Frontend Required Variables
-- `VITE_API_BASE_URL`: Base URL where the backend REST API is reachable (default: `http://localhost:8080`).
-
----
-
-## 3. Database Setup & Migrations
-
-### A. Initialize PostgreSQL Database
-Log in to your PostgreSQL instance using `psql` or administrative tools:
-
-```sql
-CREATE DATABASE township_db;
-CREATE USER township_admin WITH ENCRYPTED PASSWORD 'YOUR_STRONG_PASSWORD';
-GRANT ALL PRIVILEGES ON DATABASE township_db TO township_admin;
-\c township_db
-GRANT ALL ON SCHEMA public TO township_admin;
-```
-
-### B. Database Migration Scripts
-Database migrations are versioned under `backend/src/main/resources/db/migration/`:
-
-1. `V1__init_core_entities.sql`: Baseline schema (`towers`, `flats`, `users`, `flat_members`).
-2. `V2__maintenance_billing_and_ledger.sql`: Billing configurations, monthly maintenance bills, and immutable flat ledgers.
-3. `V3__payments_and_bank_reconciliation.sql`: Payment transactions, bank batches, and reconciliation rules.
-4. `V4__complaint_management.sql`: Help desk tickets, AI classification attributes, and complaint activity logs.
-5. `V5__visitor_management_and_gate_security.sql`: Gate passes, QR tokens, visitor activities, and guard role constraint.
-6. `V6__amenity_and_clubhouse_booking.sql`: Clubhouse amenities, operating slots, and booking capacities.
-7. `V7__notices_and_announcements.sql`: Circular notices, tower target filters, and resident read receipts.
-8. `V8__committee_analytics.sql`: Managing Committee role extension (`COMMITTEE` role constraint).
-
-When running with Spring Boot in development, migrations are applied in sequence automatically. For manual execution:
-
-```bash
-# Apply migrations sequentially
-psql -h localhost -U township_admin -d township_db -f backend/src/main/resources/db/migration/V1__init_core_entities.sql
-psql -h localhost -U township_admin -d township_db -f backend/src/main/resources/db/migration/V2__maintenance_billing_and_ledger.sql
-psql -h localhost -U township_admin -d township_db -f backend/src/main/resources/db/migration/V3__payments_and_bank_reconciliation.sql
-psql -h localhost -U township_admin -d township_db -f backend/src/main/resources/db/migration/V4__complaint_management.sql
-psql -h localhost -U township_admin -d township_db -f backend/src/main/resources/db/migration/V5__visitor_management_and_gate_security.sql
-psql -h localhost -U township_admin -d township_db -f backend/src/main/resources/db/migration/V6__amenity_and_clubhouse_booking.sql
-psql -h localhost -U township_admin -d township_db -f backend/src/main/resources/db/migration/V7__notices_and_announcements.sql
-psql -h localhost -U township_admin -d township_db -f backend/src/main/resources/db/migration/V8__committee_analytics.sql
-```
-
----
-
-## 4. Local Step-by-Step Setup
-
-### Step 1: Clone or Extract Repository
-```bash
-cd township-management
-```
-
-### Step 2: Configure Environment
-Copy the environment template and provide your database credentials:
-```bash
+**Linux/macOS**
+~~~bash
 cp .env.example .env
-```
+~~~
 
-### Step 3: Start the Backend Service
-Using the included Maven Wrapper:
+**Windows PowerShell**
+~~~powershell
+Copy-Item .env.example .env
+~~~
 
-**Linux / macOS:**
-```bash
-cd backend
-./mvnw clean package -DskipTests
-java -jar target/township-backend-0.0.1-SNAPSHOT.jar
-```
+Edit .env and supply local database and JWT values. The application requires a JWT secret; generate a fresh one rather than using a shared value. For example:
 
-**Windows (PowerShell):**
-```powershell
-cd backend
-.\mvnw.cmd clean package -DskipTests
-java -jar target\township-backend-0.0.1-SNAPSHOT.jar
-```
+~~~bash
+openssl rand -base64 64
+~~~
 
-Verify backend health at `http://localhost:8080/api/health`.
+For local demo data, keep APP_SEEDER_ENABLED enabled. Do not use that setting for a real production deployment.
 
-### Step 4: Start the Frontend Application
-In a separate terminal:
+Start the stack from the repository root:
 
-```bash
-cd frontend
-npm install
+~~~bash
+docker compose -f township-management/docker-compose.yml up --build -d
+~~~
+
+Open:
+
+- Frontend: http://localhost/
+- Backend health: http://localhost:8080/api/health
+- PostgreSQL: localhost:5432
+
+Follow backend startup:
+
+~~~bash
+docker compose -f township-management/docker-compose.yml logs -f backend
+~~~
+
+The PostgreSQL image executes the numbered SQL bootstrap scripts from backend/src/main/resources/db/migration/ when it initializes a **new empty database volume**. These are plain SQL scripts, not Flyway migrations. The V1-V9 scripts create the schema expected by the JPA entities.
+
+To stop the local stack:
+
+~~~bash
+docker compose -f township-management/docker-compose.yml down
+~~~
+
+Keep the named database volume when stopping. Do not remove volumes unless you intentionally want to delete the local demo database.
+
+## 3. Run frontend and backend separately
+
+### Backend
+
+Create a local PostgreSQL database, then set the backend environment variables listed below. From the repository root:
+
+~~~bash
+cd township-management/backend
+./mvnw spring-boot:run
+~~~
+
+On Windows PowerShell:
+
+~~~powershell
+cd township-management/backend
+.\mvnw.cmd spring-boot:run
+~~~
+
+The default local backend port is 8080. The development profile uses Hibernate schema update for local convenience; production uses schema validation.
+
+### Frontend
+
+In a second terminal:
+
+~~~bash
+cd township-management/frontend
+npm ci
 npm run dev
-```
+~~~
 
-Open your browser at `http://localhost:5173`.
+Open http://localhost:5173. The Vite development proxy sends /api requests to http://localhost:8080. The optional VITE_API_BASE_URL can be set when the frontend must call a different API origin.
 
----
+## 4. Tests and build checks
 
-## 5. Production Container Deployment (Docker Compose)
+From township-management/backend:
 
-For cloud virtual machines (AWS EC2, Google Compute Engine, DigitalOcean, or Azure VMs):
+~~~bash
+./mvnw test
+~~~
 
-### Step 1: Prepare Environment File
-Create a production `.env` file in the `township-management/` directory:
-```bash
-DB_NAME=township_prod
-DB_USER=township_dbuser
-DB_PASSWORD=<GENERATE_SECURE_PASSWORD>
-DB_PORT=5432
-JWT_SECRET=<GENERATE_CRYPTOGRAPHIC_BASE64_KEY>
-JWT_EXPIRATION_MS=86400000
-CORS_ALLOWED_ORIGINS=https://township.yourdomain.com
-PORT=8080
-```
+From township-management/frontend:
 
-### Step 2: Build and Launch Containers
-```bash
-docker-compose up -d --build
-```
+~~~bash
+npm ci
+npm run build
+npm run lint
+~~~
 
-### Step 3: Monitor Startup
-```bash
-docker-compose logs -f backend
-```
+The repository includes ten backend test classes covering authentication, billing, complaints, visitors, amenities, committee analytics, notices, payments/reconciliation, health and application startup. The Render Dockerfile builds with tests skipped, so run the test command separately; a successful deployment is not a substitute for a test run.
 
-Once the database healthcheck passes, Spring Boot starts and binds to port 8080. Nginx hosts the optimized frontend SPA on port 80 and proxies `/api/` traffic directly to the backend container.
+## 5. Cloud deployment topology
 
----
+| Component | Platform | Configuration |
+|---|---|---|
+| React/Vite frontend | Vercel | Root directory township-management/frontend; build command npm run build; output dist |
+| Spring Boot API | Render | Docker service built from township-management/backend/Dockerfile; free plan, Singapore region |
+| PostgreSQL | Neon | PostgreSQL 16, Singapore region; credentials stored in Render environment settings |
 
-## 6. Pre-Configured Development Demo Accounts
+The Vercel project is connected to the public GitHub repository. VITE_API_BASE_URL points the built frontend to the Render API. Render is connected to the same repository's main branch and automatically deploys new commits. The backend receives the Neon database connection through Render environment variables; credentials are not stored in this repository.
 
-The database seeder automatically provisions test accounts for role validation.
+### Environment variable names
 
-> [!WARNING]
-> **PRODUCTION SECURITY WARNING — DEVELOPMENT-ONLY SEED CREDENTIALS**:
-> All demo accounts, emails, and default passwords listed below are strictly development seeds intended for local testing, evaluation, and role verification. They must **NEVER** be exposed or used in any staging, production, or publicly accessible deployment.
-> 
-> Before deploying to production or exposing the system to external network traffic:
-> 1. Disable the database seeder (`app.seeder.enabled=false` or remove development seed profiles).
-> 2. Change all administrative and staff passwords to strong, cryptographically generated random strings.
-> 3. Deactivate or delete development test accounts from PostgreSQL (`DELETE FROM users WHERE email LIKE '%@grandvistapune.in';`).
+Only names are listed here; never commit values or paste secrets into source control.
 
-| Persona / Role | Full Name | Login Identifier / Email | Assigned Unit / Location | Default Password | Notes |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Resident (1)** | Neeraj Kulkarni | `neeraj.kulkarni@grandvistapune.in` | Unit T07-1203 (1,150 sq ft) | `Resident@123` | Primary owner in Tower T07 |
-| **Resident (2)** | Swati Joshi | `swati.joshi@grandvistapune.in` | Unit T12-0408 (980 sq ft) | `Resident@123` | Primary owner in Tower T12 |
-| **Resident (3)** | Aamir Shaikh | `aamir.shaikh@grandvistapune.in` | Unit T21-1601 (1,640 sq ft) | `Resident@123` | Primary owner in Tower T21 |
-| **Help Desk** | Col. Rajiv Sharma (Retd.) | `helpdesk@grandvistapune.in` | Facility HQ Office | `HelpDesk@123` | Operations & maintenance staff |
-| **Gate Guard** | Santosh Shinde | `guard@grandvistapune.in` | Gate 1 Main Cabin | `Guard@123` | Gate security terminal account |
-| **Committee** | Dr. Vikram Sethi | `committee@grandvistapune.in` | MC Boardroom | `Committee@123` | Managing Committee analytics account |
+**Backend**
+- SPRING_PROFILES_ACTIVE
+- APP_SEEDER_ENABLED
+- PORT
+- DB_HOST
+- DB_PORT
+- DB_NAME
+- DB_USER
+- DB_PASSWORD
+- SPRING_DATASOURCE_URL (optional full JDBC URL override; used for hosted Neon connectivity)
+- JWT_SECRET
+- JWT_EXPIRATION_MS
+- CORS_ALLOWED_ORIGINS
+- GEMINI_API_KEY (optional; when omitted/unavailable, the local rule-based classifier is used)
 
-> [!NOTE]
-> Residents authenticate using their login email and password. Resident phone numbers have been omitted from all documentation to protect personal privacy and uphold society data governance rules.
+**Frontend**
+- VITE_API_BASE_URL
 
----
+The evaluation database was seeded before review. APP_SEEDER_ENABLED is disabled on Render so future production restarts do not re-run the demo seeder; existing reviewer records remain in the database. Local Docker Compose defaults the seeder on for a fresh demo database.
 
-## 7. Operational Health Checks & Troubleshooting
+## 6. Reviewer demo logins
 
-### Health Check Endpoint
-```bash
-curl -s http://localhost:8080/api/health
-```
+Open the live frontend and select **Sign In**. Use the email address and password below (email login is recommended).
 
-Expected JSON response:
-```json
-{
-  "status": "UP",
-  "service": "Gated Township Resident Management System",
-  "version": "1.0.0-SNAPSHOT",
-  "environment": "dev",
-  "database": {
-    "status": "CONNECTED",
-    "productName": "PostgreSQL",
-    "productVersion": "16.15"
-  }
-}
-```
+| Role | Login email | Password |
+|---|---|---|
+| Resident | neeraj.kulkarni@grandvistapune.in | Resident@123 |
+| Resident | swati.joshi@grandvistapune.in | Resident@123 |
+| Resident | aamir.shaikh@grandvistapune.in | Resident@123 |
+| Help Desk | helpdesk@grandvistapune.in | HelpDesk@123 |
+| Guard | guard@grandvistapune.in | Guard@123 |
+| Committee | committee@grandvistapune.in | Committee@123 |
 
-### Common Issues and Resolutions
+These are intentionally published **evaluation-only** credentials for synthetic test accounts. They are not real residents or production credentials. Please avoid reusing these passwords elsewhere. Before any real production pilot, replace/delete the demo accounts, rotate all credentials, and keep demo seeding disabled.
 
-1. **`FATAL: password authentication failed for user "postgres"`**:
-   - Ensure the `DB_PASSWORD` in your `.env` or system environment matches your PostgreSQL instance password.
-   - For local Windows installations where the password is empty or custom, verify by testing `psql -U postgres -h localhost`.
+## 7. Operational boundaries
 
-2. **`Port 8080 already in use`**:
-   - Identify the conflicting process:
-     - Linux/macOS: `lsof -i :8080`
-     - Windows: `netstat -ano | findstr :8080`
-   - Either terminate the existing process or override the port via `PORT=8081` in your environment.
-
-3. **`CORS Policy Violation in Browser Console`**:
-   - Ensure `CORS_ALLOWED_ORIGINS` includes your frontend URL (e.g. `http://localhost:5173` or your production domain).
-
-4. **`HTTP 403 Forbidden on Admin or Committee Routes`**:
-   - Verify the logged-in user role via `GET /api/auth/me`. Resident and Guard roles do not have access to Help Desk or Committee endpoints. Authenticate with `helpdesk@grandvistapune.in` or `committee@grandvistapune.in`.
-
-5. **`Offline Gate Sync Queue`**:
-   - If a gate tablet lost network connectivity during visitor check-ins, the actions are queued in browser `localStorage`. When the connection is restored, navigate to the Guard Portal and click **Sync Offline Actions** to flush the queue into the PostgreSQL ledger idempotently.
+- Payments are simulated/test-only; no real money is charged.
+- The live environment does not have a Gemini API key configured. It uses the deterministic keyword/rule-based classifier; critical safety keyword matches take precedence.
+- No SMS/WhatsApp/OTP delivery is configured.
+- Physical boom barriers, access-control hardware and CCTV are not integrated.
+- Gate offline actions are a limited browser-local queue with manual sync, not full offline operation.
+- Uploaded photos are not persisted to durable object storage on the free Render service.
+- Use synthetic data only in this public evaluation environment.
