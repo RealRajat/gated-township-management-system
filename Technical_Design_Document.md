@@ -1,257 +1,211 @@
-# Technical Design Document: Gated Township Resident Management System
+# Technical Design Document
+## Gated Township Resident Management System
 
-**GitHub Repository**: https://github.com/RealRajat/gated-township-management-system  
-**Git Clone URL**: https://github.com/RealRajat/gated-township-management-system.git  
-**Live Application**: https://gated-township-management.vercel.app  
-**Live REST API**: https://gated-township-api.onrender.com  
-**API Health Endpoint**: https://gated-township-api.onrender.com/api/health  
-**Database**: Neon PostgreSQL 16 (Singapore region; free tier).  
-**Target Township**: Pune Grand Vista, Baner-Balewadi, Pune, Maharashtra (28 Towers • 2,400 Apartments)  
-**Author**: Engineering Architecture Team  
-**Date**: November 8, 2026  
-**Document Version**: 1.0.0 (Phase 12 Final Release)  
+**GitHub repository:** https://github.com/RealRajat/gated-township-management-system  
+**Live application:** https://gated-township-management.vercel.app  
+**Live REST API:** https://gated-township-api.onrender.com  
+**API health endpoint:** https://gated-township-api.onrender.com/api/health  
+**Database:** Neon PostgreSQL 16 (Singapore region)  
+**Document date:** 8 November 2026  
+**Version:** 1.1 - Evaluation deployment
 
 ---
 
-## 1. Project Overview & Client Problem Statement
+## 1. Executive summary
 
-Large residential gated townships in India (such as Pune Grand Vista, comprising 2,400 residential flats across 28 multi-story towers) face severe operational, financial, and safety bottlenecks when managed via fragmented spreadsheets, paper registers, and generic messaging groups:
+This project is a responsive, role-based web application for a gated township. It brings three resident-facing operational flows into one product:
 
-1. **Maintenance Billing & Arrears Opacity**: Society bye-laws require uniform calculation based on carpet area (INR 6.50/sq ft/month), strict due dates, late fees, and immutable double-entry ledger bookkeeping. Manual spreadsheets frequently create reconciliation disputes between flat owners and the managing committee.
-2. **Payment Reconciliation Inefficiencies**: High-volume NEFT, RTGS, and UPI bank transfers arrive with truncated bank narrations, leaving staff unable to correlate transactions to specific apartment numbers without manual investigation.
-3. **Emergency & Safety Hazards in Complaints**: Standard ticketing systems treat life-threatening incidents (gas leaks, elevator power failures with passengers trapped, sparking transformer boxes) with the same priority as minor cosmetic tickets, risking human life and statutory liability.
-4. **Gate Security Vulnerabilities**: Over 1,000 daily delivery couriers, cabs, and visitors create chaotic security cabin queues. Manual paper visitor books compromise resident privacy, cannot be audited, and fail during internet connectivity outages.
-5. **Clubhouse & Amenity Clashes**: Unregulated access to shared swimming pools, gyms, and community halls results in overcrowding and duplicate reservations.
-6. **Executive RWA Governance Gaps**: Managing Committees require real-time visibility into collection rates, dues ageing buckets, and SLA compliance without exposing sensitive resident contact credentials.
+1. **Maintenance:** residents can review maintenance bills and ledger entries and make test-mode payments.
+2. **Complaints:** residents can submit and track complaints; Help Desk staff can review, assign and update them. A classification assistant suggests a category and priority, while mandatory safety rules take precedence.
+3. **Visitors:** residents can pre-approve visitors, and guards can validate passes and record entry and exit. Walk-in requests follow a resident-approval flow.
 
-The **Gated Township Resident Management System** resolves these challenges through a unified, secure, multi-persona web application and REST API.
+The application includes four roles: Resident, Help Desk, Guard and Committee. Supporting modules include bank-statement reconciliation, amenities and bookings, notices and committee analytics.
 
-> [!NOTE]
-> **Live Deployment**: The evaluation frontend is publicly hosted on Vercel at https://gated-township-management.vercel.app. The Spring Boot REST API is hosted on Render at https://gated-township-api.onrender.com, with its health endpoint at https://gated-township-api.onrender.com/api/health. PostgreSQL 16 is hosted on Neon. The hosted environment is a free-tier demonstration deployment using synthetic seed data only; it is not approved for real resident, financial, or security operations. Free-tier resource limits and cold starts may apply, and local photo uploads are ephemeral because no persistent disk/object storage is configured.
+The public evaluation deployment has a React frontend on Vercel, a Spring Boot API on Render and PostgreSQL on Neon. It uses synthetic demonstration records only. It is not a production service for real residents, payments, visitor identity records or security operations.
 
----
+## 2. Scope and what can be evaluated
 
-## 2. Architecture & Technology Choices
+### Core flows
 
-```mermaid
-graph TB
-    subgraph ClientLayer["Frontend Client Layer"]
-        SPA["React 19 SPA (Vite 8 + Tailwind CSS v4)"]
-        Router["React Router v7"]
-        State["Auth Context + Local Storage Sync"]
-    end
+| Flow | Resident experience | Staff experience |
+|---|---|---|
+| Maintenance | Sign in, view bills and ledger, make a test payment and inspect the receipt | Help Desk can review billing and reconciliation records |
+| Complaints | Create a complaint, see classification suggestions and follow status/activity | Help Desk can review, assign and update the complaint |
+| Visitors | Create a pre-approved pass and request approval for a walk-in visitor | Guard can look up a pass and record check-in/check-out |
 
-    subgraph SecurityLayer["Security & Gateway Layer"]
-        Nginx["Nginx Reverse Proxy (SSL / Gzip / Caching)"]
-        SecurityFilter["Spring Security 6.x JWT Authentication Filter"]
-        RBAC["Method Security (@PreAuthorize)"]
-    end
+### Supporting functionality
 
-    subgraph BackendLayer["Spring Boot 4.1.2 Application Layer"]
-        AuthSvc["Auth & User Service"]
-        BillSvc["Maintenance Billing & Ledger Engine"]
-        PaySvc["Payment & Reconciliation Engine"]
-        AiSvc["AI Complaint Classifier (Gemini / Rules)"]
-        GateSvc["Visitor & Gate Pass Engine"]
-        AmenitySvc["Amenity Booking Engine"]
-        NoticeSvc["Broadcast Notice Engine"]
-        AnalyticsSvc["Committee Analytics Engine"]
-    end
+The repository also contains bank CSV reconciliation, amenity booking with capacity checks, notices/read receipts, and committee analytics/exports. These are supporting modules; the three flows above are the primary product slice for this brief.
 
-    subgraph StorageLayer["Data & Persistence Layer"]
-        Postgres[(PostgreSQL 16 Engine)]
-        Hikari["Hikari Connection Pool (ACID Isolation)"]
-        DiskStore["Hardened Local Media Storage"]
-    end
+### Demonstration data
 
-    SPA --> Nginx
-    Nginx --> SecurityFilter
-    SecurityFilter --> RBAC
-    RBAC --> BackendLayer
-    BackendLayer --> Hikari --> Postgres
-    BackendLayer --> DiskStore
-```
+The live Neon database was checked after seeding and contains 28 tower records, 3 sample flats, 6 demo users, 3 maintenance bills, 3 complaints, 4 visitor records, 5 amenities, 4 amenity bookings and 5 notices. The interface uses the approximate township label “28 Towers & 2,400 Units”; this is a scenario label, not a claim that 2,400 flat records are loaded. The hosted database contains only a small set of representative synthetic flats.
 
-### Technology Decision Rationale
-- **Java 17 LTS & Spring Boot 4.1.2**: Chosen for enterprise-grade transactional boundaries (`@Transactional`), mature ORM with Spring Data JPA/Hibernate, robust security filtering, and non-blocking background concurrency.
-- **PostgreSQL 16**: Selected for ACID transaction isolation, relational foreign keys, unique constraint guarantees across towers/flats/users, and high-performance financial aggregation queries.
-- **React 19 & Vite 8**: Ensures sub-second local build times, tree-shaking, and high-performance client rendering with responsive Tailwind CSS.
-- **Stateless JWT (HMAC-SHA512 / HS512)**: Enables horizontally scalable REST authentication without server-side session state. Cryptographic signature is generated via JJWT `Keys.hmacShaKeyFor()` using a 576-bit secret (HS512), with built-in fallback to HS256 for 256-bit keys. User claims, assigned flat associations, and RBAC roles are encapsulated securely within the token.
-- **Zero Floating-Point Financials**: `java.math.BigDecimal` with `RoundingMode.HALF_UP` is enforced across all currency fields to eliminate IEEE 754 precision drift.
+## 3. Architecture and technology choices
 
----
+### Hosted architecture
 
-## 3. Database Model & Major Entities
+| Layer | Implementation | Responsibility |
+|---|---|---|
+| Browser | React 19, React Router 7, Tailwind CSS 4 | Responsive role-specific UI |
+| Frontend hosting | Vercel (Vite build) | Static assets and HTTPS delivery |
+| API | Java 17, Spring Boot 4.1.2, Spring Security, Spring Data JPA | Authentication, validation, business rules and REST endpoints |
+| Backend hosting | Render Docker web service | Runs the Spring Boot API |
+| Database | Neon PostgreSQL 16 | Persistent relational records |
+| Optional classifier provider | Google Gemini API | Contextual complaint suggestions when a key is configured |
 
-The relational schema is structured into 8 modular Flyway migration stages:
+**Hosted request path:** Browser -> Vercel React app -> HTTPS REST requests -> Render Spring Boot API -> Neon PostgreSQL over SSL.
 
-```mermaid
-erDiagram
-    TOWERS ||--o{ FLATS : contains
-    FLATS ||--o{ FLAT_MEMBERS : houses
-    USERS ||--o{ FLAT_MEMBERS : belongs_to
-    FLATS ||--o{ MAINTENANCE_BILLS : billed_to
-    FLATS ||--o{ FLAT_LEDGER_ENTRIES : tracks
-    MAINTENANCE_BILLS ||--o{ PAYMENTS : settles
-    FLATS ||--o{ COMPLAINTS : reports
-    USERS ||--o{ COMPLAINTS : files
-    COMPLAINTS ||--o{ COMPLAINT_ACTIVITIES : audits
-    FLATS ||--o{ VISITORS : hosts
-    VISITORS ||--o{ VISITOR_ACTIVITIES : audits
-    AMENITIES ||--o{ AMENITY_BOOKINGS : reserves
-    FLATS ||--o{ AMENITY_BOOKINGS : books
-    TOWERS ||--o{ NOTICES : targets
-    USERS ||--o{ NOTICE_READS : acknowledges
-```
+The frontend reads its API origin from **VITE_API_BASE_URL**. The deployed value points to the Render API. The repository also contains a Docker Compose deployment: Nginx serves the frontend and proxies /api/ to Spring Boot, while PostgreSQL runs as a separate container with a persistent local volume. That Nginx path is for the Compose topology; it is not in the hosted Vercel request path.
 
-### Key Relational Entities
-1. **`towers`**: Represents the 28 residential high-rises (e.g. `T01` to `T28`), storing floor counts and unit allocations.
-2. **`flats`**: Represents individual units, enforcing unique `(tower_id, flat_number)` pairs, floor numbers, carpet area in sq ft, and occupancy status.
-3. **`users`**: Encapsulates residents, facility staff, guards, and committee members with BCrypt hashed passwords, unique emails, unique mobile phones, and role constraints (`RESIDENT`, `HELP_DESK`, `GUARD`, `COMMITTEE`).
-4. **`flat_members`**: Linking table implementing flat-level resident authorization (`PRIMARY_OWNER`, `TENANT`, `FAMILY_MEMBER`).
-5. **`maintenance_bills`**: Stores monthly billing records calculated at INR 6.50/sq ft, tracking `total_due`, `paid_amount`, `outstanding_balance`, and status (`UNPAID`, `PARTIALLY_PAID`, `PAID`, `OVERDUE`).
-6. **`flat_ledger_entries`**: Immutable financial ledger tracking debit invocations, credit payments, and running balance.
-7. **`bank_transactions` & `bank_statement_batches`**: Captures uploaded bank CSV entries, matching UTRs and routing ambiguous narrations to manual staff review.
-8. **`complaints` & `complaint_activities`**: Full ticketing lifecycle tracking category, priority, AI suggestions, safety escalation flags, SLAs, and immutable audit logs.
-9. **`visitors` & `visitor_activities`**: Pre-approved and walk-in gate passes with QR tokens, valid time windows, photos, and guard verification timestamps.
-10. **`amenities` & `amenity_bookings`**: Manages clubhouse assets (Gym, Pool, Badminton, Hall) with slot durations, operating hours, capacity limits, and duplicate prevention.
-11. **`notices` & `notice_reads`**: Society announcements targeted township-wide or by tower, with pinning priority and read receipts.
+### Technology rationale
 
----
+- **React + Vite:** component-based UI and a static production build suitable for CDN hosting.
+- **Spring Boot + Spring Security:** server-side validation, service-layer rules and role-based authorization.
+- **PostgreSQL:** relational links between users, flats, bills, complaints, visitors and audit/activity records.
+- **JPA/Hibernate:** entity mapping and persistence; production startup validates the schema.
+- **JWT + BCrypt:** stateless API authentication and password hashing.
+- **Docker:** repeatable backend packaging and local multi-container execution.
 
-## 4. Main User Flows
+### Database bootstrap
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Resident
-    actor Guard
-    actor HelpDesk
-    actor Committee
-    participant Gateway as Spring Security
-    participant App as Backend Service
-    participant DB as PostgreSQL 16
+The repository contains nine numbered PostgreSQL SQL bootstrap scripts (V1 through V9). They are plain SQL files, not Flyway migrations; the backend Maven configuration does not include Flyway. On a new Docker Compose database volume, the PostgreSQL image executes the scripts in /docker-entrypoint-initdb.d. The managed Neon database was initialized from the same scripts. Production uses Hibernate schema validation rather than automatic schema mutation.
 
-    Note over Resident,DB: 1. Resident Bill Payment Flow
-    Resident->>Gateway: POST /api/payments/test (Bill ID, Amount)
-    Gateway->>App: Validate JWT & Flat Authorization
-    App->>DB: Check Bill Balance & Prevent Overpayment
-    App->>DB: Record Payment & Append Immutable Credit to Ledger
-    App->>Resident: Return 200 OK with Verified Receipt
+## 4. Data model
 
-    Note over Resident,Guard: 2. Gate Security & Visitor Pass Flow
-    Resident->>App: Pre-Approve Visitor (Name, Phone, Time)
-    App->>DB: Persist Visitor Pass & Generate Secure 6-Digit Pass Code
-    App->>Resident: Display Shareable Pass with QR Token
-    Guard->>App: Lookup Pass Code at Gate Cabin
-    App->>DB: Verify Valid Window & Check In Visitor
-    App->>Guard: Confirm Entry & Print Visitor Pass
+| Entity group | Main records | Purpose |
+|---|---|---|
+| Township structure | towers, flats, flat_members | Unit inventory and resident-to-flat relationships |
+| Identity | users | Resident, Help Desk, Guard and Committee accounts |
+| Maintenance | maintenance_bills, billing_configurations, flat_ledger_entries | Bill balances and a transaction history |
+| Payments | payments, bank_statement_batches, bank_transactions | Test payments and bank reconciliation |
+| Complaints | complaints, complaint_activities | Ticket lifecycle, classification, assignment and activity history |
+| Visitors | visitors, visitor_activities | Pass details and gate-entry audit history |
+| Shared facilities | amenities, amenity_bookings | Facility capacity and booking slots |
+| Communications | notices, notice_reads | Announcements and read acknowledgements |
 
-    Note over HelpDesk,DB: 3. Bank CSV Statement Reconciliation
-    HelpDesk->>App: Upload Bank Statement CSV
-    App->>App: Parse UTR & Execute 4-Tier Match Engine
-    App->>DB: Persist Matches (Auto Matched vs Manual Review)
-    HelpDesk->>App: Approve Matched Transaction
-    App->>DB: Update Bill & Post Credit to Flat Ledger
+The main relationships are: a tower contains flats; a flat can have linked members; bills and ledger entries belong to flats; complaints are filed by users and can be linked to a flat; visitors are associated with a host flat; and amenity bookings link a flat to an amenity.
 
-    Note over Committee,DB: 4. Executive Analytics & Reporting
-    Committee->>Gateway: GET /api/committee/dashboard
-    Gateway->>App: Verify ROLE_COMMITTEE / ROLE_HELP_DESK
-    App->>DB: Aggregate Real PostgreSQL Dues, Ageing & SLAs
-    App->>Committee: Deliver Financial KPIs, Ageing Buckets & CSV Exports
-```
+## 5. Main end-to-end flows
 
----
+### 5.1 Sign-in and authorization
 
-## 5. AI Complaint Classification, Safety Overrides & Fallback Engine
+1. A user signs in with a registered email or mobile number and password.
+2. The API validates the credentials and returns a signed JWT.
+3. The frontend stores the token in browser local storage and attaches it to authenticated API requests.
+4. Backend authorization rules enforce the user's role and, for residents, the flat relationship. Hiding a screen in the frontend is not treated as the security boundary.
+5. Public registration creates a Resident account; privileged roles are provisioned separately.
 
-The system incorporates a hybrid AI classification architecture designed for maximum reliability and life safety:
+### 5.2 Maintenance and test payment
 
-```mermaid
-flowchart TD
-    Start["Resident Submits Complaint (Title + Description)"] --> Step1["Scan for Life-Safety Trigger Keywords"]
-    Step1 --> CheckSafety{"Safety Trigger Detected?<br/>(Gas leak, fire, lift trap, live wire)"}
+1. A resident opens the maintenance area and reviews the bills and ledger linked to their flat.
+2. The resident selects a bill and submits a full or partial test payment.
+3. The backend checks the bill balance and rejects invalid or excessive amounts.
+4. The payment is recorded and the bill/ledger state is updated.
+5. The UI presents the resulting payment/receipt record.
 
-    CheckSafety -->|YES| Override["CRITICAL SAFETY ESCALATION<br/>Enforce Priority: EMERGENCY<br/>Immediate SLA Dispatch (2h response, 4h fix)<br/>Lock Escalation Status (Immutable)"]
-    CheckSafety -->|NO| CheckGemini{"GEMINI_API_KEY Configured?"}
+**Payment boundary:** this is a simulated/test flow. It does not charge money and is not connected to a payment processor.
 
-    CheckGemini -->|YES| GeminiAI["Query Google Gemini API (Interactions)<br/>Analyze context & classify Category/Priority"]
-    CheckGemini -->|NO / Timeout| RuleEngine["Execute Certified Semantic Rule Engine<br/>Keyword scoring across categories & priorities"]
+### 5.3 Complaint and staff workflow
 
-    GeminiAI --> Output["Generate AI Suggestions (Category, Priority, Confidence Score)"]
-    RuleEngine --> Output
-    Override --> Save["Persist Complaint & Create Activity Audit Record"]
-    Output --> Save
-```
+1. A resident submits a title and description.
+2. The classification service returns a suggested category, priority, confidence value and explanation.
+3. The complaint is saved with its status and activity history.
+4. Help Desk staff review the ticket, assign/update it and maintain the activity trail.
+5. The resident can follow the ticket and provide a rating when the workflow permits.
 
-### Safety Rules & Guarantee
-- **Keywords**: "gas leak", "lpg smell", "cylinder leak", "elevator trapped", "lift stuck", "lift failure", "fire", "smoke", "sparking", "electric shock", "exposed wire", "short circuit", "water main burst", "flooding", "ceiling collapse".
-- **Enforcement**: When any safety keyword is matched in title or description, `isCriticalSafetyEscalation` is permanently set to `true`, priority is overridden to `EMERGENCY`, and response deadlines are tightened to 2 hours.
-- **Safety Downgrade Prevention**: Once escalated, the safety flag cannot be cleared or downgraded by subsequent ticket updates.
-- **Zero-Dependency Fallback**: If internet connectivity is interrupted or no external API key is supplied, the local semantic rule engine runs deterministically in 0ms, guaranteeing 100% classification availability.
+### 5.4 Visitor and gate workflow
 
----
+1. A resident creates a visitor pass with the visit details and validity window.
+2. The guard looks up the pass at the gate and records check-in/check-out.
+3. A walk-in visitor can be sent through the resident-approval path before entry is confirmed.
+4. Gate actions are recorded in visitor activity history.
+5. The limited offline queue stores pending gate actions in the browser's local storage and requires a later manual sync. It is not a full offline application; clearing browser storage can remove unsynced actions.
 
-## 6. Key UI/UX Decisions
+## 6. Complaint classification and AI/automation
 
-1. **Enterprise SaaS Visual Design**:
-   - Palette inspired by modern enterprise software: `#0c1322` deep navy blue sidebar, crisp `#ffffff` canvas, subtle `#0d9488` teal accents, and `#64748b` slate typography.
-   - High-contrast visual hierarchy with GitHub-style status badges.
-2. **Responsive Mobile-First Gate Interface**:
-   - Gate guards use touchscreen tablets with extra-large tap targets (48px+), fast numeric keypad inputs, high-contrast pass status badges, and instant QR camera scanning.
-3. **Resilient Offline Mode for Gate Cabin**:
-   - Offline actions are persisted in browser `localStorage`. When the guard tablet recovers connectivity, an **Offline Sync** badge alerts the guard to flush the queue into PostgreSQL with zero data loss.
-4. **Role-Aware Contextual Header**:
-   - Dynamically highlights active persona (*Resident*, *Help Desk*, *Security Gate*, *Managing Committee*) with one-click access to demo accounts in development environments.
-   - **Development-Only Warning**: Contextual demo switcher displays a prominent banner indicating credentials are development seeds and must be disabled before production release.
+The classification pipeline is deliberately layered:
 
----
+1. **Safety override first:** SafetyKeywordRuleEngine checks the title and description for defined fire/smoke, gas-leak, trapped-lift and electrical-shock/exposed-wire patterns. A match forces CRITICAL priority before the general classifier runs.
+2. **Gemini path (optional):** when GEMINI_API_KEY is configured and the provider is available, the Gemini-backed service can provide contextual suggestions.
+3. **Rule fallback:** when Gemini is not configured or is unavailable, RuleBasedClassificationEngine classifies using local keyword rules. It returns a heuristic confidence value (currently 60 for OTHER, 85 for a recognized category); this is not a statistically calibrated probability.
+4. **Human review:** suggestions are intended to help staff triage, not replace Help Desk judgment. A category/priority can be reviewed as part of the staff workflow. A rule miss or false positive remains possible.
 
-## 7. Security & Privacy Decisions
+The live evaluation environment does not have a Gemini API key configured; it uses the local rule-based fallback. The mandatory safety override takes precedence over either path. This is bounded automation, not a claim of perfect AI accuracy or a substitute for emergency services and on-site safety procedures.
 
-1. **Public Registration Role Hardening**:
-   - Public registration endpoints (`/api/auth/register`) unconditionally assign `ROLE_RESIDENT`. Privileged roles (`HELP_DESK`, `GUARD`, `COMMITTEE`) can only be provisioned through internal administrative seeding.
-2. **Resident Flat-Level Data Isolation**:
-   - All resident endpoints strictly enforce `flatMemberRepository.existsByFlatIdAndUserId()`. Residents attempting to inspect bills, ledgers, or visitor passes belonging to other units receive HTTP 403 Forbidden.
-3. **Statutory Defaulter Privacy Protection**:
-   - In accordance with co-operative society bye-laws, defaulter rosters omit personal telephone numbers, personal emails, and login credentials, exposing only tower ID, flat number, carpet area, days overdue, and outstanding arrears.
-4. **Guard Role Restriction**:
-   - Guards are prohibited from approving visitor passes on behalf of residents (`VisitorService.processResidentApproval` explicitly blocks `Role.GUARD`).
-5. **Bank Ambiguity Shield**:
-   - Ambiguous bank statement line items are never auto-posted to ledgers. Transactions with matching amounts but ambiguous narrations are routed to `MANUAL_REVIEW` or `UNMATCHED`.
-6. **Development Credentials Isolation & Rotation Warning**:
-   - All demo seed credentials documented in operational guides are strictly restricted to local and test environments. Production deployment requires disabling the seeder profile and rotating all credentials to secure, unguessable secrets.
+## 7. UI and design decisions
 
----
+- **Sign-in:** a focused login card keeps the first action clear and displays validation/error feedback next to the form.
+- **Resident dashboard:** surfaces role-relevant summaries and shortcuts to bills, complaints and visitors instead of exposing staff-only navigation.
+- **Maintenance:** groups bill status, amounts and payment/ledger history so a resident can understand what is due and what has been recorded.
+- **Complaints:** uses clear status, priority and activity information to make the ticket lifecycle visible to both residents and staff.
+- **Visitor/gate screens:** prioritise pass lookup and entry/exit actions for a guard's operational context.
+- **Staff screens:** separate Help Desk operational tasks and Committee reporting from the resident's self-service views.
+- **Responsive layout:** navigation and content grids adapt to smaller screens; forms include input validation and user-visible errors.
 
-## 8. Assumptions & Design Constraints
+The visual system uses a deep navy base, teal accents, slate text and restrained status colours. This gives primary actions and urgent states a consistent hierarchy without turning every element into an alert.
 
-- **Assumption 1 (Maintenance Tariff)**: Flat monthly rate of INR 6.50 per square foot based on flat carpet area as established in the original township brief and society bye-laws.
-- **Assumption 2 (Test Mode Payment Processing)**: Mock payment gateway operating strictly in test mode simulating full and partial settlements, UTR generation, and immutable ledger crediting without real money or external payment gateway integrations.
-- **Assumption 3 (Gate Security & Scanner Hardware)**: Gate camera scanning utilizes standard HTML5 video capture APIs and browser QR scanners; automated physical boom barrier hardware integration requires a separate MQTT/GPIO relay controller.
-- **Assumption 4 (Township Scale & Hierarchy)**: Target deployment calibrated for Pune Grand Vista consisting of 28 residential towers (T01 through T28) and 2,400 apartments in Pune, Maharashtra.
-- **Assumption 5 (AI Fallback & Zero-Dependency Operation)**: When an external Google Gemini API key is not configured or network connectivity is unavailable, the local semantic rule engine autonomously classifies complaints with 100% availability.
-- **Assumption 6 (Single-Township Scope)**: The current database schema is optimized for a single gated community / township with 28 towers rather than multi-tenant multi-society SaaS.
-- **Assumption 7 (Strict Resident Unit Isolation)**: Residents have access exclusively to data (bills, ledgers, visitor passes, notices) linked to the flats where they hold primary ownership, tenancy, or family membership.
-- **Assumption 8 (Live Deployment Staging)**: No public cloud live deployment URL exists yet. The application is configured and verified for local execution and on-premise / containerized deployment via Docker Compose.
+## 8. Security, privacy and operational controls
 
----
+- Passwords are stored as BCrypt hashes.
+- API endpoints use JWT authentication and role-based access checks.
+- Resident resources are checked against the resident's flat membership on the backend.
+- Request DTO validation and service-level checks protect core inputs and state changes.
+- Production error responses suppress stack traces and internal exception details.
+- Real secrets are supplied through environment variables, not committed configuration values.
+- DataSeeder is configurable. The evaluation database was seeded before review; Render has APP_SEEDER_ENABLED disabled so later production restarts do not re-run demo seeding. Local Compose defaults the seeder on for a fresh demo database.
+- The hosted demo credentials are intentionally included in deployment.md for the evaluator. They are synthetic test credentials, not production credentials.
+- Complaint and visitor photos are written to the container filesystem. The free Render service has no persistent disk/object storage configured, so uploaded files can disappear after a restart or redeploy.
 
-## 9. Features Deliberately Cut from Scope
+## 9. Assumptions and constraints
 
-To ensure architectural focus, system stability, and timely delivery of core township management, the following were deliberately deferred:
-- Direct real-money payment gateway integration (Razorpay / PayU API merchant credentials).
-- Physical hardware boom barrier serial/relay drivers.
-- Native mobile apps (React Native / Flutter); responsive mobile web SPA serves all devices.
-- SMS / WhatsApp OTP gateway APIs (mocked in-app via direct credentials for reliable testing).
+The supplied submission brief identifies the product as a gated-township resident app for maintenance, complaints and visitors, but does not provide detailed tariff, township inventory, staffing policy or service-level numbers. The following values are therefore **explicit demonstration assumptions**, not verified client policies:
 
----
+| Assumption | Demonstration choice | How to change it |
+|---|---|---|
+| Township identity and scale | “Pune Grand Vista”, 28 towers and an approximate 2,400-unit label | Replace the sample configuration and seed data with the client's real inventory |
+| Tower layout | 15 floors and a notional 86 units per tower in seed configuration | Import the client's actual tower/flat schedule |
+| Maintenance tariff | INR 6.50 per square foot per month in demo billing configuration | Confirm the society's approved tariff and billing rules |
+| Roles | Resident, Help Desk, Guard and Committee | Map to the client's actual job titles and permissions |
+| Payment behavior | Test-only simulated full/partial payment | Integrate a real payment provider only after merchant approval and reconciliation design |
+| AI provider | Gemini is optional; deterministic local fallback is active when it is absent | Configure a managed AI key and define review/monitoring policy |
+| Visitor approval | Resident pre-approval and resident approval for walk-ins | Align with the client's actual gate protocol and retention rules |
+| Single society | One township per deployment | Add tenant isolation before serving multiple societies |
 
-## 10. Known Limitations & Future Improvements
+## 10. Tests and verification
 
-| Limitation | Impact | Recommended Production Roadmap |
-| :--- | :--- | :--- |
-| **Local Photo Storage** | Uploaded photos are stored on local filesystem (`/uploads`). | Migrate storage provider to AWS S3 or Google Cloud Storage with pre-signed URLs. |
-| **Single-Node In-Memory Scheduler** | Timed jobs run inside the Spring Boot container. | Introduce Quartz or ShedLock backed by PostgreSQL for multi-node clustering. |
-| **Email Delivery** | Circulars and notices are tracked in-app. | Integrate SendGrid or AWS SES for automated email digest broadcasts. |
-| **Automated Meter Reading (AMR)** | Water tanker supplementary calculations are manual. | Integrate IoT water meters via LoRaWAN / MQTT telemetry into billing. |
+The repository contains ten backend test classes covering application context, authentication, billing, amenity booking, committee analytics, complaints, health, notices, payments/reconciliation and visitors. Run them from township-management/backend:
+
+~~~bash
+./mvnw test
+~~~
+
+The frontend production build can be checked from township-management/frontend:
+
+~~~bash
+npm ci
+npm run build
+npm run lint
+~~~
+
+The Render Docker image build currently uses -DskipTests; therefore a successful cloud deploy should not be interpreted as evidence that the test suite passed. Run the test command above separately and review any environment-dependent failures.
+
+## 11. What was cut and what comes next
+
+### Deliberately not integrated in this evaluation build
+
+- Real-money payment processing and bank connectivity.
+- SMS/WhatsApp/OTP delivery.
+- Physical gate barriers, access controllers and CCTV hardware.
+- Durable object storage for uploaded photos.
+- A full multi-device offline sync engine.
+- Multi-society tenancy and enterprise operational monitoring.
+
+### Next steps before a production pilot
+
+1. Confirm the actual maintenance rules, tariff, due dates and complaint SLAs with the client.
+2. Replace demo users and seed records with controlled onboarding; rotate credentials and keep the seeder disabled.
+3. Add persistent, access-controlled object storage and an explicit retention/deletion policy for photos.
+4. Add a real payment provider only after reconciliation, refunds and audit requirements are agreed.
+5. Add SMS/OTP or notification delivery, physical gate integration and operational monitoring.
+6. Run the full test suite in CI, perform security testing and load-test realistic township volumes.
