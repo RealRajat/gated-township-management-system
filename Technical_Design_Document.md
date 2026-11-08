@@ -2,7 +2,10 @@
 
 **GitHub Repository**: https://github.com/RealRajat/gated-township-management-system  
 **Git Clone URL**: https://github.com/RealRajat/gated-township-management-system.git  
-**Live Application Status**: No public live deployment URL exists yet. The application is verified locally and container-ready via Docker Compose (Backend: `http://localhost:8080`, Frontend: `http://localhost:5173`).  
+**Live Application**: https://gated-township-management.vercel.app  
+**Live REST API**: https://gated-township-api.onrender.com  
+**API Health Endpoint**: https://gated-township-api.onrender.com/api/health  
+**Database**: Neon PostgreSQL 16 (Singapore region; free tier).  
 **Target Township**: Pune Grand Vista, Baner-Balewadi, Pune, Maharashtra (28 Towers • 2,400 Apartments)  
 **Author**: Engineering Architecture Team  
 **Date**: November 8, 2026  
@@ -24,7 +27,7 @@ Large residential gated townships in India (such as Pune Grand Vista, comprising
 The **Gated Township Resident Management System** resolves these challenges through a unified, secure, multi-persona web application and REST API.
 
 > [!NOTE]
-> **Live Deployment Note**: No public cloud live deployment URL has been provisioned yet for this evaluation. The application is running in local development and containerized multi-container environments via Docker Compose (`http://localhost:8080` backend, `http://localhost:5173` frontend).
+> **Live Deployment**: The evaluation frontend is publicly hosted on Vercel at https://gated-township-management.vercel.app. The Spring Boot REST API is hosted on Render at https://gated-township-api.onrender.com, with its health endpoint at https://gated-township-api.onrender.com/api/health. PostgreSQL 16 is hosted on Neon. The hosted environment is a free-tier demonstration deployment using synthetic seed data only; it is not approved for real resident, financial, or security operations. Free-tier resource limits and cold starts may apply, and local photo uploads are ephemeral because no persistent disk/object storage is configured.
 
 ---
 
