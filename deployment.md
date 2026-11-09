@@ -106,7 +106,7 @@ npm ci
 npm run dev
 ~~~
 
-Open http://localhost:5173. The Vite development proxy sends /api requests to http://localhost:8080. The optional VITE_API_BASE_URL can be set when the frontend must call a different API origin.
+Open http://localhost:5173. The Vite development proxy sends /api requests to http://localhost:8080. In production, the API client uses same-origin /api URLs and Vercel forwards those requests to the Render API.
 
 ## 4. Tests and build checks
 
@@ -134,7 +134,7 @@ The repository includes ten backend test classes covering authentication, billin
 | Spring Boot API | Render | Docker service built from township-management/backend/Dockerfile; free plan, Singapore region |
 | PostgreSQL | Neon | PostgreSQL 16, Singapore region; credentials stored in Render environment settings |
 
-The Vercel project is connected to the public GitHub repository. VITE_API_BASE_URL points the built frontend to the Render API. Render is connected to the same repository's main branch and automatically deploys new commits. The backend receives the Neon database connection through Render environment variables; credentials are not stored in this repository.
+The Vercel project is connected to the public GitHub repository. Its vercel.json forwards /api/* requests to the Render API and serves index.html for React Router routes. This keeps browser requests same-origin and avoids cross-origin API preflight. Render is connected to the same repository's main branch and automatically deploys new commits. The backend receives the Neon database connection through Render environment variables; credentials are not stored in this repository.
 
 ### Environment variable names
 
@@ -154,9 +154,6 @@ Only names are listed here; never commit values or paste secrets into source con
 - JWT_EXPIRATION_MS
 - CORS_ALLOWED_ORIGINS
 - GEMINI_API_KEY (optional; when omitted/unavailable, the local rule-based classifier is used)
-
-**Frontend**
-- VITE_API_BASE_URL
 
 The evaluation database was seeded before review. APP_SEEDER_ENABLED is disabled on Render so future production restarts do not re-run the demo seeder; existing reviewer records remain in the database. Local Docker Compose defaults the seeder on for a fresh demo database.
 
