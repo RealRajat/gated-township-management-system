@@ -54,9 +54,9 @@ The live Neon database was checked after seeding and contains 28 tower records, 
 | Database | Neon PostgreSQL 16 | Persistent relational records |
 | Optional classifier provider | Google Gemini API | Contextual complaint suggestions when a key is configured |
 
-**Hosted request path:** Browser -> Vercel React app -> HTTPS REST requests -> Render Spring Boot API -> Neon PostgreSQL over SSL.
+**Hosted request path:** Browser -> Vercel React app -> same-origin `/api/*` rewrite/proxy -> Render Spring Boot API -> Neon PostgreSQL over SSL.
 
-The frontend reads its API origin from **VITE_API_BASE_URL**. The deployed value points to the Render API. The repository also contains a Docker Compose deployment: Nginx serves the frontend and proxies /api/ to Spring Boot, while PostgreSQL runs as a separate container with a persistent local volume. That Nginx path is for the Compose topology; it is not in the hosted Vercel request path.
+In production the browser calls relative `/api/*` URLs on the Vercel origin. `vercel.json` forwards those API paths server-side to the Render API, avoiding browser cross-origin preflight/CORS dependency. During local Vite development, the frontend uses the Vite `/api` proxy to `http://localhost:8080`. The repository also contains a Docker Compose deployment: Nginx serves the frontend and proxies `/api/` to Spring Boot, while PostgreSQL runs as a separate container with a persistent local volume.
 
 ### Technology rationale
 
