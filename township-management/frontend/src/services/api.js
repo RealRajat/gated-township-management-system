@@ -3,7 +3,8 @@
  * Phase 4: Full Authentication & JWT Integration
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+// Local Vite development uses the backend proxy; production uses same-origin Vercel rewrites.
+const API_BASE_URL = import.meta.env.DEV ? 'http://localhost:8080' : '';
 
 export function getAuthToken() {
   return localStorage.getItem('township_jwt');
